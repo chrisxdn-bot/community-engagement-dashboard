@@ -1,5 +1,5 @@
 import { Member } from '@/types'
-import { Mail, Phone, MapPin, ChevronDown, ChevronUp, ChevronsUpDown } from 'lucide-react'
+import { Mail, Phone, MapPin, ChevronDown, ChevronUp, ChevronsUpDown, MessageCircle } from 'lucide-react'
 import { useState } from 'react'
 
 interface MemberTableProps {
