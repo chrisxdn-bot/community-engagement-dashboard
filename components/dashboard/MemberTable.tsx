@@ -1,5 +1,5 @@
 import { Member } from '@/types'
-import { Mail, Phone, MapPin, ChevronDown, ChevronUp, ChevronsUpDown, MessageCircle } from 'lucide-react'
+import { Mail, Phone, MapPin, ChevronDown, ChevronUp, ChevronsUpDown, MessageCircle, TrendingUp, TrendingDown, Minus } from 'lucide-react'
 import { useState } from 'react'
 
 interface MemberTableProps {
@@ -10,8 +10,8 @@ type SortField = 'full_name' | 'email' | 'location' | 'created_at' | 'engagement
 type SortDirection = 'asc' | 'desc'
 
 export default function MemberTable({ members }: MemberTableProps) {
-  const [sortField, setSortField] = useState<SortField>('full_name')
-  const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
+  const [sortField, setSortField] = useState<SortField>('engagement_score')
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -76,27 +76,30 @@ export default function MemberTable({ members }: MemberTableProps) {
     return colors[index]
   }
 
-  // Get behavior badge based on type
-  const getBehaviorBadge = (behaviorType: string | null) => {
-    if (!behaviorType) return null
+  // Get engagement trend (this month vs last month)
+  const getEngagementTrend = (metrics: any) => {
+    if (!metrics) return null
 
-    const badges = {
-      champion: { emoji: '🔥', label: 'Champion', color: 'bg-orange-100 text-orange-700 border-orange-200' },
-      contributing: { emoji: '💡', label: 'Contributing', color: 'bg-blue-100 text-blue-700 border-blue-200' },
-      curious: { emoji: '🔍', label: 'Curious', color: 'bg-purple-100 text-purple-700 border-purple-200' },
-      encouraging: { emoji: '💚', label: 'Encouraging', color: 'bg-green-100 text-green-700 border-green-200' },
-      quiet: { emoji: '💤', label: 'Quiet', color: 'bg-slate-100 text-slate-600 border-slate-200' }
+    const thisMonth = metrics.messages_this_month || 0
+    const lastMonth = metrics.messages_last_month || 0
+
+    if (thisMonth > lastMonth) {
+      return { icon: TrendingUp, color: 'text-green-600', label: 'Up from last month' }
+    } else if (thisMonth < lastMonth) {
+      return { icon: TrendingDown, color: 'text-orange-600', label: 'Down from last month' }
+    } else if (thisMonth === lastMonth && thisMonth > 0) {
+      return { icon: Minus, color: 'text-slate-400', label: 'Same as last month' }
     }
+    return null
+  }
 
-    const badge = badges[behaviorType as keyof typeof badges]
-    if (!badge) return null
-
-    return (
-      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium border ${badge.color}`}>
-        <span>{badge.emoji}</span>
-        <span>{badge.label}</span>
-      </span>
-    )
+  // Get score color based on value
+  const getScoreColor = (score: number) => {
+    if (score >= 80) return 'text-orange-700'
+    if (score >= 60) return 'text-blue-700'
+    if (score >= 40) return 'text-purple-700'
+    if (score >= 20) return 'text-green-700'
+    return 'text-slate-500'
   }
 
   if (members.length === 0) {
@@ -127,7 +130,7 @@ export default function MemberTable({ members }: MemberTableProps) {
                   onClick={() => handleSort('engagement_score')}
                   className="flex items-center gap-2 font-semibold text-sm text-slate-700 hover:text-slate-900 transition-colors group"
                 >
-                  Engagement
+                  Engagement (Public WhatsApp)
                   <SortIcon field="engagement_score" />
                 </button>
               </th>
@@ -166,100 +169,111 @@ export default function MemberTable({ members }: MemberTableProps) {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {sortedMembers.map((member, index) => (
-              <tr
-                key={member.id}
-                className="hover:bg-slate-50/50 transition-colors group"
-              >
-                {/* Name with Avatar */}
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-3">
-                    <div className={`flex-shrink-0 w-10 h-10 rounded-lg ${getAvatarColor(member.full_name)} flex items-center justify-center font-semibold text-sm shadow-sm`}>
-                      {getInitials(member.full_name)}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="font-semibold text-slate-900 truncate">
-                        {member.full_name}
-                      </p>
-                      <p className="text-xs text-slate-500">Member #{member.member_number}</p>
-                    </div>
-                  </div>
-                </td>
+            {sortedMembers.map((member) => {
+              const trend = getEngagementTrend(member.engagement_metrics)
+              const TrendIcon = trend?.icon
 
-                {/* Engagement */}
-                <td className="px-6 py-4">
-                  {member.engagement_metrics ? (
-                    <div className="flex flex-col gap-2">
-                      <div className="flex items-center gap-2">
-                        <MessageCircle className="w-4 h-4 text-slate-400" />
-                        <span className="text-sm text-slate-700">
-                          <span className="font-semibold">{member.engagement_metrics.total_messages}</span> messages
-                        </span>
+              return (
+                <tr
+                  key={member.id}
+                  className="hover:bg-slate-50/50 transition-colors group"
+                >
+                  {/* Name with Avatar */}
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-3">
+                      <div className={`flex-shrink-0 w-10 h-10 rounded-lg ${getAvatarColor(member.full_name)} flex items-center justify-center font-semibold text-sm shadow-sm`}>
+                        {getInitials(member.full_name)}
                       </div>
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                              <div
-                                className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full transition-all"
-                                style={{ width: `${member.engagement_metrics.engagement_score}%` }}
-                              />
+                      <div className="min-w-0">
+                        <p className="font-semibold text-slate-900 truncate">
+                          {member.full_name}
+                        </p>
+                        <p className="text-xs text-slate-500">Member #{member.member_number}</p>
+                      </div>
+                    </div>
+                  </td>
+
+                  {/* Engagement */}
+                  <td className="px-6 py-4">
+                    {member.engagement_metrics ? (
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-2xl font-bold text-slate-900 tabular-nums">
+                            {member.engagement_metrics.total_messages}
+                          </span>
+                          <span className="text-sm text-slate-500">messages</span>
+                          {TrendIcon && (
+                            <div className={`${trend.color} flex items-center ml-1`}>
+                              <TrendIcon className="w-4 h-4" />
                             </div>
-                            <span className="text-xs font-medium text-slate-600 min-w-[2rem] text-right">
+                          )}
+                        </div>
+                        <div className="flex items-center gap-3 text-xs text-slate-500">
+                          <span>
+                            <span className="font-medium text-slate-700">{member.engagement_metrics.messages_this_month}</span> this month
+                          </span>
+                          <span>•</span>
+                          <span>
+                            <span className="font-medium text-slate-600">{member.engagement_metrics.messages_last_month}</span> last month
+                          </span>
+                          <span>•</span>
+                          <span>
+                            Score: <span className={`font-semibold ${getScoreColor(member.engagement_metrics.engagement_score)}`}>
                               {member.engagement_metrics.engagement_score}
                             </span>
-                          </div>
+                          </span>
                         </div>
                       </div>
-                      {getBehaviorBadge(member.engagement_metrics.behavior_type)}
+                    ) : (
+                      <div className="text-sm text-slate-400">
+                        No activity
+                      </div>
+                    )}
+                  </td>
+
+                  {/* Email */}
+                  <td className="px-6 py-4">
+                    <a
+                      href={`mailto:${member.email}`}
+                      className="flex items-center gap-2 text-sm text-slate-700 hover:text-blue-600 transition-colors group/email"
+                    >
+                      <Mail className="w-4 h-4 text-slate-400 group-hover/email:text-blue-600" />
+                      <span className="truncate max-w-xs">{member.email}</span>
+                    </a>
+                  </td>
+
+                  {/* Phone */}
+                  <td className="px-6 py-4">
+                    <a
+                      href={`tel:${member.phone_number}`}
+                      className="flex items-center gap-2 text-sm text-slate-700 hover:text-green-600 transition-colors group/phone"
+                    >
+                      <Phone className="w-4 h-4 text-slate-400 group-hover/phone:text-green-600" />
+                      <span>{member.phone_number}</span>
+                    </a>
+                  </td>
+
+                  {/* Location */}
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-2 text-sm text-slate-700">
+                      <MapPin className="w-4 h-4 text-slate-400" />
+                      <span className="truncate max-w-xs">{member.location}</span>
                     </div>
-                  ) : (
-                    <span className="text-sm text-slate-400">No activity</span>
-                  )}
-                </td>
+                  </td>
 
-                {/* Email */}
-                <td className="px-6 py-4">
-                  <a
-                    href={`mailto:${member.email}`}
-                    className="flex items-center gap-2 text-sm text-slate-700 hover:text-blue-600 transition-colors group/email"
-                  >
-                    <Mail className="w-4 h-4 text-slate-400 group-hover/email:text-blue-600" />
-                    <span className="truncate max-w-xs">{member.email}</span>
-                  </a>
-                </td>
-
-                {/* Phone */}
-                <td className="px-6 py-4">
-                  <a
-                    href={`tel:${member.phone_number}`}
-                    className="flex items-center gap-2 text-sm text-slate-700 hover:text-green-600 transition-colors group/phone"
-                  >
-                    <Phone className="w-4 h-4 text-slate-400 group-hover/phone:text-green-600" />
-                    <span>{member.phone_number}</span>
-                  </a>
-                </td>
-
-                {/* Location */}
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-2 text-sm text-slate-700">
-                    <MapPin className="w-4 h-4 text-slate-400" />
-                    <span className="truncate max-w-xs">{member.location}</span>
-                  </div>
-                </td>
-
-                {/* Joined Date */}
-                <td className="px-6 py-4">
-                  <span className="text-sm text-slate-600">
-                    {new Date(member.created_at).toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric'
-                    })}
-                  </span>
-                </td>
-              </tr>
-            ))}
+                  {/* Joined Date */}
+                  <td className="px-6 py-4">
+                    <span className="text-sm text-slate-600">
+                      {new Date(member.created_at).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric'
+                      })}
+                    </span>
+                  </td>
+                </tr>
+              )
+            })}
           </tbody>
         </table>
       </div>
