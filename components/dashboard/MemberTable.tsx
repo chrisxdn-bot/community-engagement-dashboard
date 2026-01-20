@@ -141,7 +141,7 @@ export default function MemberTable({ members }: MemberTableProps) {
                       <p className="font-semibold text-slate-900 truncate">
                         {member.full_name}
                       </p>
-                      <p className="text-xs text-slate-500">Member #{index + 1}</p>
+                      <p className="text-xs text-slate-500">Member #{member.member_number}</p>
                     </div>
                   </div>
                 </td>
