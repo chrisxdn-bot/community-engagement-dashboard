@@ -1,6 +1,8 @@
 import { Search, Users, UserCheck, LayoutGrid, Table2 } from 'lucide-react'
+import { Member } from '@/types'
 
 type ViewMode = 'table' | 'cards'
+type BehaviorFilter = 'all' | 'leader' | 'contributor' | 'supporter' | 'observer'
 
 interface DashboardHeaderProps {
   totalCount: number
@@ -10,6 +12,10 @@ interface DashboardHeaderProps {
   loading: boolean
   viewMode: ViewMode
   onViewModeChange: (mode: ViewMode) => void
+  lastUpdated?: string | null
+  behaviorFilter: BehaviorFilter
+  onBehaviorFilterChange: (filter: BehaviorFilter) => void
+  members: Member[]
 }
 
 export default function DashboardHeader({
@@ -19,8 +25,40 @@ export default function DashboardHeader({
   searchQuery,
   loading,
   viewMode,
-  onViewModeChange
+  onViewModeChange,
+  lastUpdated,
+  behaviorFilter,
+  onBehaviorFilterChange,
+  members
 }: DashboardHeaderProps) {
+  const formatLastUpdated = (dateString: string | null) => {
+    if (!dateString) return null;
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit'
+    });
+  };
+
+  // Calculate behavior distribution
+  const behaviorCounts = {
+    leader: members.filter(m => m.engagement_metrics?.behavior_type === 'leader').length,
+    contributor: members.filter(m => m.engagement_metrics?.behavior_type === 'contributor').length,
+    supporter: members.filter(m => m.engagement_metrics?.behavior_type === 'supporter').length,
+    observer: members.filter(m => m.engagement_metrics?.behavior_type === 'observer').length,
+  };
+
+  const filterOptions: { value: BehaviorFilter; label: string; emoji: string; color: string }[] = [
+    { value: 'all', label: 'All Members', emoji: '👥', color: 'bg-slate-100 text-slate-700 hover:bg-slate-200' },
+    { value: 'leader', label: `Leaders (${behaviorCounts.leader})`, emoji: '🔨', color: 'bg-orange-50 text-orange-700 hover:bg-orange-100 border-orange-200' },
+    { value: 'contributor', label: `Contributors (${behaviorCounts.contributor})`, emoji: '💡', color: 'bg-blue-50 text-blue-700 hover:bg-blue-100 border-blue-200' },
+    { value: 'supporter', label: `Supporters (${behaviorCounts.supporter})`, emoji: '👏', color: 'bg-green-50 text-green-700 hover:bg-green-100 border-green-200' },
+    { value: 'observer', label: `Observers (${behaviorCounts.observer})`, emoji: '👀', color: 'bg-slate-50 text-slate-500 hover:bg-slate-100 border-slate-200' },
+  ];
+
   return (
     <div className="mb-10">
       {/* Header Section */}
@@ -29,17 +67,27 @@ export default function DashboardHeader({
           <h1 className="text-4xl lg:text-5xl font-bold bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 bg-clip-text text-transparent mb-3 tracking-tight">
             Community Members
           </h1>
-          <p className="text-slate-600 text-lg">
-            Manage and connect with your community
-          </p>
+          <div className="flex items-center gap-3">
+            <p className="text-slate-600 text-lg">
+              Manage and connect with your community
+            </p>
+            {lastUpdated && (
+              <>
+                <span className="text-slate-300">•</span>
+                <p className="text-sm text-slate-500">
+                  Data updated {formatLastUpdated(lastUpdated)}
+                </p>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Stats Cards */}
         <div className="flex gap-4">
           <div className="bg-white/80 backdrop-blur-sm rounded-xl border border-slate-200/60 px-6 py-4 shadow-sm hover:shadow-md transition-shadow">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-50 rounded-lg">
-                <Users className="w-5 h-5 text-blue-600" />
+              <div className="p-2 bg-slate-50 rounded-lg">
+                <Users className="w-5 h-5 text-slate-600" />
               </div>
               <div>
                 <p className="text-sm font-medium text-slate-600">Total Members</p>
@@ -49,20 +97,6 @@ export default function DashboardHeader({
               </div>
             </div>
           </div>
-
-          {searchQuery && (
-            <div className="bg-white/80 backdrop-blur-sm rounded-xl border border-slate-200/60 px-6 py-4 shadow-sm hover:shadow-md transition-shadow">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-50 rounded-lg">
-                  <UserCheck className="w-5 h-5 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-slate-600">Filtered</p>
-                  <p className="text-2xl font-bold text-slate-900">{filteredCount}</p>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
 

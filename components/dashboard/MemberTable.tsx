@@ -196,37 +196,43 @@ export default function MemberTable({ members }: MemberTableProps) {
                   {/* Engagement */}
                   <td className="px-6 py-4">
                     {member.engagement_metrics ? (
-                      <div className="flex flex-col gap-1">
-                        <div className="flex items-baseline gap-2">
-                          <span className="text-2xl font-bold text-slate-900 tabular-nums">
-                            {member.engagement_metrics.total_messages}
-                          </span>
-                          <span className="text-sm text-slate-500">messages</span>
+                      <div className="flex items-center gap-6">
+                        {/* Message Count */}
+                        <div className="flex items-center gap-2">
+                          <MessageCircle className="w-5 h-5 text-slate-400" />
+                          <div className="flex items-baseline gap-1.5">
+                            <span className="text-3xl font-bold text-slate-900 tabular-nums">
+                              {member.engagement_metrics.total_messages}
+                            </span>
+                            <span className="text-sm text-slate-500 font-medium">messages</span>
+                          </div>
                           {TrendIcon && (
-                            <div className={`${trend.color} flex items-center ml-1`}>
-                              <TrendIcon className="w-4 h-4" />
-                            </div>
+                            <TrendIcon className={`w-4 h-4 ${trend.color}`} />
                           )}
                         </div>
-                        <div className="flex items-center gap-3 text-xs text-slate-500">
-                          <span>
-                            <span className="font-medium text-slate-700">{member.engagement_metrics.messages_this_month}</span> this month
-                          </span>
-                          <span>•</span>
-                          <span>
-                            <span className="font-medium text-slate-600">{member.engagement_metrics.messages_last_month}</span> last month
-                          </span>
-                          <span>•</span>
-                          <span>
-                            Score: <span className={`font-semibold ${getScoreColor(member.engagement_metrics.engagement_score)}`}>
+
+                        {/* Metrics */}
+                        <div className="flex items-center gap-4 text-sm">
+                          <div className="text-center">
+                            <div className="font-bold text-slate-900 tabular-nums">{member.engagement_metrics.messages_this_month}</div>
+                            <div className="text-xs text-slate-500">this month</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="font-bold text-slate-700 tabular-nums">{member.engagement_metrics.messages_last_month}</div>
+                            <div className="text-xs text-slate-500">last month</div>
+                          </div>
+                          <div className="text-center">
+                            <div className={`font-bold tabular-nums ${getScoreColor(member.engagement_metrics.engagement_score)}`}>
                               {member.engagement_metrics.engagement_score}
-                            </span>
-                          </span>
+                            </div>
+                            <div className="text-xs text-slate-500">score</div>
+                          </div>
                         </div>
                       </div>
                     ) : (
-                      <div className="text-sm text-slate-400">
-                        No activity
+                      <div className="flex items-center gap-2 text-sm text-slate-400">
+                        <MessageCircle className="w-4 h-4" />
+                        <span>No activity</span>
                       </div>
                     )}
                   </td>
