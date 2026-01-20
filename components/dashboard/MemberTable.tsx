@@ -6,7 +6,7 @@ interface MemberTableProps {
   members: Member[]
 }
 
-type SortField = 'full_name' | 'email' | 'location' | 'created_at'
+type SortField = 'full_name' | 'email' | 'location' | 'created_at' | 'engagement_score'
 type SortDirection = 'asc' | 'desc'
 
 export default function MemberTable({ members }: MemberTableProps) {
@@ -23,8 +23,16 @@ export default function MemberTable({ members }: MemberTableProps) {
   }
 
   const sortedMembers = [...members].sort((a, b) => {
-    const aVal = a[sortField]
-    const bVal = b[sortField]
+    let aVal: any
+    let bVal: any
+
+    if (sortField === 'engagement_score') {
+      aVal = a.engagement_metrics?.engagement_score ?? -1
+      bVal = b.engagement_metrics?.engagement_score ?? -1
+    } else {
+      aVal = a[sortField]
+      bVal = b[sortField]
+    }
 
     if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1
     if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1
@@ -68,6 +76,29 @@ export default function MemberTable({ members }: MemberTableProps) {
     return colors[index]
   }
 
+  // Get behavior badge based on type
+  const getBehaviorBadge = (behaviorType: string | null) => {
+    if (!behaviorType) return null
+
+    const badges = {
+      champion: { emoji: '🔥', label: 'Champion', color: 'bg-orange-100 text-orange-700 border-orange-200' },
+      contributing: { emoji: '💡', label: 'Contributing', color: 'bg-blue-100 text-blue-700 border-blue-200' },
+      curious: { emoji: '🔍', label: 'Curious', color: 'bg-purple-100 text-purple-700 border-purple-200' },
+      encouraging: { emoji: '💚', label: 'Encouraging', color: 'bg-green-100 text-green-700 border-green-200' },
+      quiet: { emoji: '💤', label: 'Quiet', color: 'bg-slate-100 text-slate-600 border-slate-200' }
+    }
+
+    const badge = badges[behaviorType as keyof typeof badges]
+    if (!badge) return null
+
+    return (
+      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium border ${badge.color}`}>
+        <span>{badge.emoji}</span>
+        <span>{badge.label}</span>
+      </span>
+    )
+  }
+
   if (members.length === 0) {
     return (
       <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200/60 p-12 text-center">
@@ -89,6 +120,15 @@ export default function MemberTable({ members }: MemberTableProps) {
                 >
                   Name
                   <SortIcon field="full_name" />
+                </button>
+              </th>
+              <th className="px-6 py-4 text-left">
+                <button
+                  onClick={() => handleSort('engagement_score')}
+                  className="flex items-center gap-2 font-semibold text-sm text-slate-700 hover:text-slate-900 transition-colors group"
+                >
+                  Engagement
+                  <SortIcon field="engagement_score" />
                 </button>
               </th>
               <th className="px-6 py-4 text-left">
@@ -144,6 +184,38 @@ export default function MemberTable({ members }: MemberTableProps) {
                       <p className="text-xs text-slate-500">Member #{member.member_number}</p>
                     </div>
                   </div>
+                </td>
+
+                {/* Engagement */}
+                <td className="px-6 py-4">
+                  {member.engagement_metrics ? (
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center gap-2">
+                        <MessageCircle className="w-4 h-4 text-slate-400" />
+                        <span className="text-sm text-slate-700">
+                          <span className="font-semibold">{member.engagement_metrics.total_messages}</span> messages
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full transition-all"
+                                style={{ width: `${member.engagement_metrics.engagement_score}%` }}
+                              />
+                            </div>
+                            <span className="text-xs font-medium text-slate-600 min-w-[2rem] text-right">
+                              {member.engagement_metrics.engagement_score}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      {getBehaviorBadge(member.engagement_metrics.behavior_type)}
+                    </div>
+                  ) : (
+                    <span className="text-sm text-slate-400">No activity</span>
+                  )}
                 </td>
 
                 {/* Email */}

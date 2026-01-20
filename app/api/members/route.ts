@@ -26,10 +26,12 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  // Transform engagement_metrics array to single object
+  // Transform engagement_metrics - handle both array and object formats
   const transformedMembers = members?.map(member => ({
     ...member,
-    engagement_metrics: member.engagement_metrics?.[0] || null
+    engagement_metrics: Array.isArray(member.engagement_metrics)
+      ? member.engagement_metrics[0] || null
+      : member.engagement_metrics || null
   }))
 
   return NextResponse.json({ members: transformedMembers })
